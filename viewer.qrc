@@ -1,0 +1,22 @@
+ <!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file>images/open.png</file>
+     <file>images/palette.png</file>
+     <file>images/create.png</file>
+     <file>images/warning.png</file>
+     <file>images/inform.png</file>
+     <file>images/error.png</file>
+     <file>images/tile.png</file>
+     <file>images/cascade.png</file>
+     <file>images/UpDown.png</file>
+     <file>images/topright.png</file>
+     <file>images/topleft.png</file>
+     <file>images/bottomright.png</file>
+     <file>images/bottomleft.png</file>
+     <file>images/zoomin.png</file>
+     <file>images/zoomout.png</file>
+     <file>images/copy.png</file>
+     <file>images/overlay.png</file>
+     <file>images/backarrow.png</file>
+ </qresource>
+ </RCC>
