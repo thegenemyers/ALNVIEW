@@ -4,21 +4,18 @@
 ## _Author:  Gene Myers_
 ## _First:   April 10, 2025_
 
-In brief, DaViewer allows you to view any subset of the information in a given .las
-file of local alignments computed by the daligner or the forth coming damapper, and any
-track information associated with the read database(s) that were compared to produce
-the local alignments (LAs).  The complete document can be found at the
-[Dazzler blog](https://dazzlerblog.wordpress.com/command-guides/daviewer).
+In brief, ALNview allows you to view the alignments in a .1aln as a "dot" plot between the two source
+genomes, where each align is an alignment segment.  You can view several different .1aln files that
+are between the same two genomes as a set of layers that can be turned on an off.  For each layers
+the thickness and color of the lines is under your control.  There is also a special layer that show
+a true k-mer dot plot where you can control the size of k and the color of the dots.  This special
+layer only becomes visible when the field of view in both dimentions is less than 1Mbp.
 
-To build DaViewer you will need to download the latest (free) version of the Qt library
-which you can get here.  Once Qt is installed you will need to set the shell variable
-QTDIR to the path of the library which depends on where you chose to install it.  I set
-this variable in the shell file .login at my root so that every time I open a window,
-Qt is known.  Another good spot to set this shell variable is .cshrc (for bash) of your
-shell's equivalent.
+You can zoom be selecting regions or pressing up/down buttons. You can also pick alignment segments
+which displays the coordinates, length, and iid of the alignment and gives you the option of requesting
+to see the actual alignment in a secondary window.  And more ...
 
-To make the viewer you must first utter "qmake viewer.pro" in the directory to which
-you downloaded the module.  qmake is a Qt program that constructs a Makefile (much like
-configure) from the specification given in viewer.pro.  You then simply say "make" and
-hopefully the compiles all go off without complaint.  You should then find the DaViewer
-application in the folder, which you can launch by double clicking it.
+ALNview is currently only available as a prebuilt, binary .dmg for Apple computers.  We also give
+you all the source files so the ambitious (or desperate :-) ) user can build it for other operating
+systems using Qt 6.9.0 or higher.  Indeed if you make a binary image for a Windows or Unix machine
+I would be very happy if you made a pull request with the relevant file and I will place it here.
