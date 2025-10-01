@@ -5,13 +5,13 @@
 ## _First:   April 10, 2025_
 
 In brief, ALNview allows you to view the alignments in a .1aln as a "dot" plot between the two source
-genomes, where each align is an alignment segment.  You can view several different .1aln files that
+genomes, where each alignnment is viewed as a line segment.  You can view several different .1aln files that
 are between the same two genomes as a set of layers that can be turned on an off.  For each layers
 the thickness and color of the lines is under your control.  There is also a special layer that show
 a true k-mer dot plot where you can control the size of k and the color of the dots.  This special
-layer only becomes visible when the field of view in both dimentions is less than 1Mbp.
+layer only becomes visible when the field of view in both dimensions is less than 1Mbp.
 
-You can zoom be selecting regions or pressing up/down buttons. You can also pick alignment segments
+You can zoom by selecting regions or pressing up/down buttons. You can also pick alignment segments
 which displays the coordinates, length, and iid of the alignment and gives you the option of requesting
 to see the actual alignment in a secondary window.  And more ...
 
