@@ -144,7 +144,7 @@ DotCanvas::DotCanvas(QWidget *parent) : QWidget(parent)
     bline->setFont(QFont(tr("Monaco"),11));
     bline->setEnabled(false);
 
-  QAction *alignAct = new QAction(tr("Alignment"),this);
+  alignAct = new QAction(tr("Alignment"),this);
     alignAct->setFont(QFont(tr("Monaco"),11));
     alignAct->setToolTip(tr("Show the alignment for this segment"));
 
@@ -175,6 +175,8 @@ DotCanvas::DotCanvas(QWidget *parent) : QWidget(parent)
 Frame *DotCanvas::shareData(DotState *s, DotPlot *p)
 { state = s;
   plot  = p;
+  if (plot->db1->gdb.seqs == NULL || plot->db2->gdb.seqs == NULL)
+    popup->actions().at(2)->setEnabled(false);
   return (&frame);
 }
 
@@ -192,6 +194,10 @@ bool DotCanvas::zoomView(double zoomDel)
   double vH = frame.h;
   double nW = vW / zoomDel;
   double nH = vH / zoomDel;
+
+  if (plot == NULL)
+    return (false);
+
   if (nW > plot->alen && nH > plot->blen)
     { if (plot->alen/nW > plot->blen/nH)
         { nH = nH*(plot->alen/nW);
@@ -614,36 +620,31 @@ void DotCanvas::mousePressEvent(QMouseEvent *event)
 pick_code:
   select  = false;
   picking = true;
-  // if (frame.w > PICK_LIMIT)
-    // { faraway->popup(event->globalPosition().toPoint());
-      // picking = true;
-    // }
-  // else
-    { pickedSeg = pick(event->position().toPoint().x(),
-                       event->position().toPoint().y(),&pickedLayer);
-      if (pickedSeg != NULL)
-        { char  *s1, *s2;
-          double d1, d2;
-          int    len, prec;
+  pickedSeg = pick(event->position().toPoint().x(),
+                   event->position().toPoint().y(),&pickedLayer);
+  if (pickedSeg != NULL)
+    { char  *s1, *s2;
+      double d1, d2;
+      int    len, prec;
 
-          s1 = Map_Coord(&(plot->db1->gdb),pickedSeg->abeg,-1,
-                         state->format,state->view.w);
-          s2 = Map_Coord(&(plot->db2->gdb),-1,pickedSeg->bbeg,
-                         state->format,state->view.h);
-          aline->setText(tr("Beg: %1,%2").arg(s1).arg(s2));
+      s1 = Map_Coord(&(plot->db1->gdb),pickedSeg->abeg,-1,
+                     state->format,state->view.w);
+      s2 = Map_Coord(&(plot->db2->gdb),-1,pickedSeg->bbeg,
+                     state->format,state->view.h);
+      aline->setText(tr("Beg: %1,%2").arg(s1).arg(s2));
 
-          d1 = pickedSeg->aend - pickedSeg->abeg;
-          d2 = llabs(pickedSeg->bend - pickedSeg->bbeg);
-          len = (d1 + d2) / 2.;
+      d1 = pickedSeg->aend - pickedSeg->abeg;
+      d2 = llabs(pickedSeg->bend - pickedSeg->bbeg);
+      len = (d1 + d2) / 2.;
 
-          d1 = digits(len,&s1,&prec);
+      d1 = digits(len,&s1,&prec);
 
-          bline->setText(tr("Len: %1%2   Id: %3\%").
-                            arg(len/d1,4,'f',prec).arg(s1).arg(pickedSeg->iid));
+      bline->setText(tr("Len: %1%2   Id: %3\%").
+                        arg(len/d1,4,'f',prec).arg(s1).arg(pickedSeg->iid));
 
-          popup->popup(event->globalPosition().toPoint());
-          return;
-        }
+      popup->popup(event->globalPosition().toPoint());
+
+      return;
     }
   menuLock = false;
 }
@@ -1530,6 +1531,10 @@ tryagain:
       else
         return;
     }
+  if (plot->db1->gdb.seqs == NULL)
+    DotWindow::warning(tr("Could not find source for %1, alignments & dot-plot disabled").arg(plot->db1->name),NULL,DotWindow::ERROR,tr("OK"));
+  else if (plot->db1 != plot->db2 && plot->db2->gdb.seqs == NULL)
+    DotWindow::warning(tr("Could not find source for %1, alignments & dot-plot disabled").arg(plot->db2->name),NULL,DotWindow::ERROR,tr("OK"));
 
   if (dotwindows.length() == 0)
     sptr = NULL;
@@ -1946,16 +1951,9 @@ DotWindow::DotWindow(DotPlot *model, DotState *startState, bool isCopy) : QMainW
 
   setCentralWidget(centralFrame);
 
-  { char *n1 = Root(plot->db1->name,NULL);
-    char *n2 = Root(plot->db2->name,NULL);
-
-    setWindowTitle(tr("ALNview: %1 vs %2").arg(n1).arg(n2));
-    setMinimumWidth(800);
-    setMinimumHeight(600);
-
-    free(n1);
-    free(n2);
-  }
+  setWindowTitle(tr("ALNview: %1 vs %2").arg(plot->db1->name).arg(plot->db2->name));
+  setMinimumWidth(800);
+  setMinimumHeight(600);
 
   createActions();
   createMenus();
@@ -1972,6 +1970,10 @@ DotWindow::DotWindow(DotPlot *model, DotState *startState, bool isCopy) : QMainW
       for (j = 0; j < MAX_LAYERS; j++)
         { state.order[j] = j;
           state.on[j] = true;
+        }
+      if (plot->db1->gdb.seqs == NULL || plot->db2->gdb.seqs == NULL)
+        { state.on[0] = false;
+          layerOn[0]->setEnabled(false);
         }
     }
   else
@@ -2000,6 +2002,8 @@ DotWindow::DotWindow(DotPlot *model, DotState *startState, bool isCopy) : QMainW
           state.colorR[j] = startState->colorR[j];
           state.thick[j] = startState->thick[j];
         }
+      if (plot->db1->gdb.seqs == NULL || plot->db2->gdb.seqs == NULL)
+        layerOn[0]->setEnabled(false);
     }
   if ( ! isCopy)
     { state.view.x = 0;
@@ -2235,14 +2239,14 @@ void DotWindow::zoomTo()
 void DotWindow::checkRangeA()
 { Selection sel;
 
-  if (interpret_range(&sel,Arng->text().toLatin1().data(),&(plot->db1->gdb),plot->db1->hash))
+  if (plot != NULL && interpret_range(&sel,Arng->text().toLatin1().data(),&(plot->db1->gdb),plot->db1->hash))
     DotWindow::warning(tr(EPLACE),this,DotWindow::ERROR,tr("OK"));
 }
 
 void DotWindow::checkRangeB()
 { Selection sel;
 
-  if (interpret_range(&sel,Brng->text().toLatin1().data(),&(plot->db2->gdb),plot->db2->hash))
+  if (plot != NULL && interpret_range(&sel,Brng->text().toLatin1().data(),&(plot->db2->gdb),plot->db2->hash))
     DotWindow::warning(tr(EPLACE),this,DotWindow::ERROR,tr("OK"));
 }
 
@@ -2295,7 +2299,7 @@ void DotWindow::viewChange()
 void DotWindow::checkFocus()
 { Selection sel;
 
-  if (interpret_point(&sel,Fpnt->text().toLatin1().data(),&(plot->db1->gdb),plot->db1->hash,&(plot->db2->gdb),plot->db2->hash))
+  if (plot != NULL && interpret_point(&sel,Fpnt->text().toLatin1().data(),&(plot->db1->gdb),plot->db1->hash,&(plot->db2->gdb),plot->db2->hash))
     DotWindow::warning(tr(EPLACE),this,DotWindow::ERROR,tr("OK"));
 }
 

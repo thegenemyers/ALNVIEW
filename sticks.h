@@ -94,6 +94,7 @@ typedef struct
     DotGDB      *db2;
     int          nlays;
     DotLayer    *layers[MAX_LAYERS];
+    int          dotref;
     void        *dotmemory;
   } DotPlot;
 

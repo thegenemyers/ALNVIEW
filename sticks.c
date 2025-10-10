@@ -807,41 +807,10 @@ DotPlot *copyPlot(DotPlot *model)
   *plot = *model;
   plot->db1->nref += 1;
   plot->db2->nref += 1;
-  for (j = 0; j < plot->nlays; j++)
+  for (j = 1; j < plot->nlays; j++)
     plot->layers[j]->nref += 1;
+  plot->dotref += 1;
   return (plot);
-}
-
-static char *simplify_path(char *path)
-{ char *r, *s, *n;
-
-  r = path;
-  for (s = path; *s != '\0'; s++)
-    if (!isspace(*s))
-      *r++ = *s;
-  *r = '\0';
-
-  r = path+1;
-  s = path;
-  while ((n = index(s+1,'/')) != NULL)
-    { if (s[1] == '.' && s[2] == '.')
-        { r -= 2;
-          while (*r != '/')
-            r -= 1;
-          r += 1;
-          s = n;
-        }
-      else if (s+1 == n || (s+2 == n && s[1] == '.'))
-        s = n;
-      else
-        { while (s < n)
-            *r++ = *++s;
-        }
-    }
-  while (*s != '\0')
-    *r++ = *++s; 
-
-  return (path);
 }
 
 static int compare_GDB(GDB *old, GDB *new)
@@ -901,7 +870,7 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
   //  Initiate .1aln file reading and read header information
 
   { char  *pwd, *root;
-    FILE  *test;
+    GDB   _gdb1, _gdb2;
 
     pwd   = PathTo(alnPath);
     root  = Root(alnPath,".1aln");
@@ -918,118 +887,31 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
     free(root);
     free(pwd);
 
-    test = fopen(src1_name,"r");
-    if (test == NULL)
-      { if (*src1_name != '/')
-          test = fopen(Catenate(cpath,"/",src1_name,""),"r");
-        if (test == NULL)
-          { sprintf(EPLACE,"Could not find GDB %s\n",src1_name);
-            goto error1;
-          }
-        pwd = Strdup(Catenate(cpath,"/",src1_name,""),"Allocating expanded name");
-        if (pwd == NULL)
-          { fclose(test);
-            goto error1;
-          }
-        free(src1_name);
-        src1_name = pwd;
-      }
-    else
-      { if (*src1_name != '/')
-          { free(cpath);
-            cpath = getcwd(NULL,0);
-            pwd = Strdup(Catenate(cpath,"/",src1_name,""),"Allocating expanded name");
-            if (pwd == NULL)
-              { fclose(test);
-                goto error1;
-              }
-            free(src1_name);
-            src1_name = pwd;
-          }
-      }
-    fclose(test);
-
-    if (src2_name != NULL)
-      { test = fopen(src2_name,"r");
-        if (test == NULL)
-          { if (*src2_name != '/')
-              test = fopen(Catenate(cpath,"/",src2_name,""),"r");
-            if (test == NULL)
-              { sprintf(EPLACE,"Could not find GDB %s\n",src2_name);
-                goto error1;
-              }
-            pwd = Strdup(Catenate(cpath,"/",src2_name,""),"Allocating expanded name");
-            if (pwd == NULL)
-              { fclose(test);
-                goto error1;
-              }
-            free(src2_name);
-            src2_name = pwd;
-          }
-        else
-          { if (*src2_name != '/')
-              { free(cpath);
-                cpath = getcwd(NULL,0);
-                pwd = Strdup(Catenate(cpath,"/",src2_name,""),"Allocating expanded name");
-                if (pwd == NULL)
-                  { fclose(test);
-                    goto error1;
-                  }
-                free(src2_name);
-                src2_name = pwd;
-              }
-          }
-        fclose(test);
-      }
-    free(cpath);
-    cpath = NULL;
-  }
-
-  //  Create possibly temporary (if model != NULL) GDB's / DB records
-
-  { char  *spath, *tpath;
-    int    type;
-    GDB   _gdb1, _gdb2;
-    int    nogood;
-
-    simplify_path(src1_name);
-    if (src2_name != NULL)
-      simplify_path(src2_name);
+    //  Create possibly temporary (if model != NULL) GDB's / DB records
 
     gdb1 = &_gdb1;
     gdb2 = &_gdb2;
 
-    type = Get_GDB_Paths(src1_name,NULL,&spath,&tpath,0);
-    if (type < 0)
-      goto error1;
-    if (type != IS_GDB)
-      nogood = (Create_GDB(gdb1,spath,type,1,tpath) == NULL);
-    else
-      nogood = Read_GDB(gdb1,tpath);
-    free(spath);
-    free(tpath);
-    if (nogood)
-      goto error1;
-  
+    if (Get_GDB(gdb1,src1_name,cpath,1) == NULL)
+      { if (EPLACE[strlen(Prog_Name)+2] != 'C' || input->lineType != 'g')
+          goto error1;
+        Read_Aln_Skeleton(input,src1_name,gdb1);
+      }
+
     if (src2_name != NULL)
-      { type = Get_GDB_Paths(src2_name,NULL,&spath,&tpath,0);
-        if (type < 0)
-          { Close_GDB(gdb1);
-            goto error1;
-          }
-        if (type != IS_GDB)
-          nogood = (Create_GDB(gdb2,spath,type,1,tpath) == NULL);
-        else
-          nogood = Read_GDB(gdb2,tpath);
-        free(spath);
-        free(tpath);
-        if (nogood)
-          { Close_GDB(gdb1);
-            goto error1;
+      { if (Get_GDB(gdb2,src2_name,cpath,1) == NULL)
+          { if (EPLACE[strlen(Prog_Name)+2] != 'C' || input->lineType != 'g')
+              goto error1;
+            Read_Aln_Skeleton(input,src2_name,gdb2);
           }
       }
     else
       gdb2 = gdb1;
+
+    Skip_Aln_Skeletons(input);
+
+    free(cpath);
+    cpath = NULL;
 
     //  If first layer, make DB records and transfer GDB's, otherwise check the GDB's
     //     are equal and then close.
@@ -1042,7 +924,7 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
             goto error2;
           }
         db1->nref = 1;
-        db1->name = src1_name;
+        db1->name = Root(src1_name,NULL);
         db1->gdb  = _gdb1;
         if (src2_name == NULL)
           { db2 = db1;
@@ -1055,12 +937,13 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
                 goto error2;
               }
             db2->nref = 1;
-            db2->name = src2_name;
+            db2->name = Root(src2_name,NULL);
             db2->gdb  = _gdb2;
           }
 
         plot->db1 = db1;
         plot->db2 = db2;
+        plot->dotref = 1;
         plot->dotmemory = dotplot_memory();
       }
     else
@@ -1068,11 +951,6 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
 
         db1 = model->db1;
         db2 = model->db2;
-
-        free(src1_name);
-        free(src2_name);
-        src1_name = NULL;
-        src2_name = NULL;
 
         comp1 = compare_GDB(&(db1->gdb),gdb1);
         comp2 = 0;
@@ -1092,6 +970,10 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
             goto error1;
           }
       }
+    free(src1_name);
+    free(src2_name);
+    src1_name = NULL;
+    src2_name = NULL;
 
     gdb1 = &(db1->gdb);
     gdb2 = &(db2->gdb);
@@ -1352,7 +1234,10 @@ error3:
 error2:
   if (model == NULL)
     { if (db1 != db2)
-        free(db2);
+        { free(db2->name);
+          free(db2);
+        }
+      free(db1->name);
       free(db1);
       if (gdb2 != gdb1)
         Close_GDB(gdb2);
@@ -1399,7 +1284,8 @@ void Free_DotPlot(DotPlot *plot)
       free(plot->layers[i]->segs);
       oneFileClose(plot->layers[i]->input);
     }
-  free(plot->dotmemory);
+  if (plot->dotref-- <= 1)
+    free(plot->dotmemory);
   Free_DotGDB(plot->db1);
   Free_DotGDB(plot->db2);
   free(plot);
@@ -1597,7 +1483,7 @@ char *create_alignment(DotPlot *plot, DotLayer *layer, DotSegment *seg, char **t
   else
     aln->bseq -= bmin;
 
-  Compute_Trace_PTS(aln,work,layer->tspace,GREEDIEST);
+  Compute_Trace_PTS(aln,work,layer->tspace,GREEDIEST,1,-1);
 
   Gap_Improver(aln,work);
 

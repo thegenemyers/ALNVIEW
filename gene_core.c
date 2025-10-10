@@ -21,7 +21,7 @@ char Ebuffer[1000];
  *
  ********************************************************************************************/
 
-char *Prog_Name;
+char *Prog_Name = "ALNview";
 
 char *Command_Line;
 
@@ -35,6 +35,7 @@ void *Malloc(int64 size, char *mesg)
         EPRINTF(EPLACE,"%s: Out of memory (%s)\n",Prog_Name,mesg);
       EXIT(NULL);
     }
+  // printf("Alloc %10lld / %12lld: %s\n",size,(int64) p,mesg);
   return (p);
 }
 
@@ -48,6 +49,7 @@ void *Realloc(void *p, int64 size, char *mesg)
         EPRINTF(EPLACE,"%s: Out of memory (%s)\n",Prog_Name,mesg);
       EXIT(NULL);
     }
+  // printf("Alloc %10lld / %12lld: %s\n",size,(int64) p,mesg);
   return (p);
 }
 
@@ -138,9 +140,11 @@ char *Catenate(char *path, char *sep, char *root, char *suffix)
 
   if (path == NULL || root == NULL || sep == NULL || suffix == NULL)
     { free(cat);
-      max = -1;
+      cat = NULL;
       return (NULL);
     }
+  if (cat == NULL)
+    max = -1;
   len =  strlen(path);
   len += strlen(sep);
   len += strlen(root);
@@ -290,7 +294,7 @@ int  Number_Digits(int64 num)
     digit = 0;
   while (num >= 1)
     { num /= 10;
-	    digit += 1;
+      digit += 1;
     }
   return (digit);
 }
@@ -471,7 +475,7 @@ void StartTime()
   Mwall = Iwall;
 }
 
-void TimeTo(FILE *f, int all)
+void TimeTo(FILE *f, int all, int reset)
 { struct rusage    now;
   struct timespec  today;
   struct rusage   *t;
@@ -487,14 +491,13 @@ void TimeTo(FILE *f, int all)
   if (all)
     { t = &Itime;
       w = &Iwall;
-      fprintf (f,"\nTotal Resources:");
+      fprintf (f,"\n  Total Resources:");
     }
   else
     { t = &Mtime;
       w = &Mwall;
       fprintf (f,"\n  Resources for phase:");
     }
-
 
   usecs = now.ru_utime.tv_sec  - t->ru_utime.tv_sec;
   umics = now.ru_utime.tv_usec - t->ru_utime.tv_usec;
@@ -540,6 +543,8 @@ void TimeTo(FILE *f, int all)
 
   fprintf(f,"\n");
 
-  Mtime = now;
-  Mwall = today;
+  if (reset)
+    { Mtime = now;
+      Mwall = today;
+    }
 }

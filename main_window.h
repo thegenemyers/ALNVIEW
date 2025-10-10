@@ -201,6 +201,7 @@ private:
   MyMenu  *popup;
   QAction *aline;
   QAction *bline;
+  QAction *alignAct;
   MyMenu  *faraway;
 };
 
