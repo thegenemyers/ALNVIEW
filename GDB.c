@@ -469,10 +469,12 @@ FILE **Create_GDB(GDB *gdb, char *spath, int ftype, int bps, char *tpath, int nt
   bases = NULL;
   if (bps != 0)
     { if (tpath == NULL)
-        { seqpath = Numbered_Suffix("._gdb.",getpid(),".bps.XXXXXX");
+        { seqpath = MyCatenate(getenv("TMPDIR"),"/","",
+                         Numbered_Suffix("._gdb.",getpid(),".bps.XXXXXX"));
           int fd = mkstemp(seqpath);
           if (fd == -1)
-            { free(seqpath);
+            { EPRINTF(EPLACE,"Could not make temporary %s",seqpath);
+              free(seqpath);
               EXIT (NULL);
             }
           close(fd);
@@ -1662,22 +1664,28 @@ FILE **Get_GDB(GDB *gdb, char *source, char *cpath, int num_bps)
     }
   fclose(test);
 
-  type  = Get_GDB_Paths(source,NULL,&spath,&tpath,0);
-  if (type != IS_GDB)
-    units = Create_GDB(gdb,spath,type,num_bps,NULL,0);
+  type = Get_GDB_Paths(source,NULL,&spath,&tpath,0);
+  if (type < 0)
+    goto error;
+  else if (type != IS_GDB)
+    { units = Create_GDB(gdb,spath,type,num_bps,NULL,0);
+      if (units == NULL)
+        goto error;
+    }
   else
-    { Read_GDB(gdb,tpath);
+    { if (Read_GDB(gdb,tpath))
+        goto error;
       units = (FILE **) &(gdb->seqs);
       if (num_bps > 0)
         { if (gdb->seqs == NULL)
             { EPRINTF(EPLACE,"%s: GDB %s must have sequence data\n",Prog_Name,tpath);
-              EXIT (NULL);
+              goto error;
             }
           if (num_bps > 1)
             { units = malloc(sizeof(FILE *)*num_bps);
               if (units == NULL)
                 { EPRINTF(EPLACE,"%s: Could not allocate units array for GDB's\n",Prog_Name);
-                  EXIT(NULL);
+                  goto error;
                 }
               units[0] = gdb->seqs;
               for (i = 1; i < num_bps; i++)
@@ -1686,7 +1694,7 @@ FILE **Get_GDB(GDB *gdb, char *source, char *cpath, int num_bps)
                     { EPRINTF(EPLACE,"%s: Cannot open another copye of GDB bps %s\n",
                                      Prog_Name,gdb->seqpath);
                       free(units);
-                      EXIT(NULL);
+                      goto error;
                     }
                 }
             }
@@ -1696,6 +1704,11 @@ FILE **Get_GDB(GDB *gdb, char *source, char *cpath, int num_bps)
   if (used_cpath)
     free(source);
   return (units);
+
+error:
+  if (used_cpath)
+    free(source);
+  EXIT (NULL);
 }
 
 

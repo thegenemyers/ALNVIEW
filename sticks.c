@@ -893,16 +893,18 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
     gdb2 = &_gdb2;
 
     if (Get_GDB(gdb1,src1_name,cpath,1) == NULL)
-      { if (EPLACE[strlen(Prog_Name)+2] != 'C' || input->lineType != 'g')
+      { if (input->lineType == 'g')
+          Read_Aln_Skeleton(input,src1_name,gdb1);
+        else
           goto error1;
-        Read_Aln_Skeleton(input,src1_name,gdb1);
       }
 
     if (src2_name != NULL)
       { if (Get_GDB(gdb2,src2_name,cpath,1) == NULL)
-          { if (EPLACE[strlen(Prog_Name)+2] != 'C' || input->lineType != 'g')
+          { if (input->lineType == 'g')
+              Read_Aln_Skeleton(input,src2_name,gdb2);
+            else
               goto error1;
-            Read_Aln_Skeleton(input,src2_name,gdb2);
           }
       }
     else
@@ -920,7 +922,7 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
       { db1 = malloc(sizeof(DotGDB));
         db2 = NULL;
         if (db1 == NULL)
-          { sprintf(EPLACE,"Cannot allocate GDB record\n");
+          { sprintf(EPLACE,"Cannot allocate GDB record");
             goto error2;
           }
         db1->nref = 1;
@@ -933,7 +935,7 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
         else
           { db2 = malloc(sizeof(DotGDB));
             if (db2 == NULL)
-              { sprintf(EPLACE,"Cannot allocate GDB record\n");
+              { sprintf(EPLACE,"Cannot allocate GDB record");
                 goto error2;
               }
             db2->nref = 1;
@@ -962,11 +964,11 @@ DotPlot *createPlot(char *alnPath, int lCut, int iCut, int sCut, DotPlot *model)
         Close_GDB(gdb1);
 
         if (comp1)
-          { sprintf(EPLACE,"1st Genome is not the same as the base layer\n");
+          { sprintf(EPLACE,"1st Genome is not the same as the base layer");
             goto error1;
           }
         if (comp2)
-          { sprintf(EPLACE,"2nd Genome is not the same as the base layer\n");
+          { sprintf(EPLACE,"2nd Genome is not the same as the base layer");
             goto error1;
           }
       }
