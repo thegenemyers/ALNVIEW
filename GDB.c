@@ -469,7 +469,10 @@ FILE **Create_GDB(GDB *gdb, char *spath, int ftype, int bps, char *tpath, int nt
   bases = NULL;
   if (bps != 0)
     { if (tpath == NULL)
-        { seqpath = MyCatenate(getenv("TMPDIR"),"/","",
+        { char *tmpdir = getenv("TMPDIR");
+          if (tmpdir == NULL)
+            tmpdir = "/tmp";
+          seqpath = MyCatenate(tmpdir,"/","",
                          Numbered_Suffix("._gdb.",getpid(),".bps.XXXXXX"));
           int fd = mkstemp(seqpath);
           if (fd == -1)
