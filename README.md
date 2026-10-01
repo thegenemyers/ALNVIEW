@@ -15,7 +15,33 @@ You can zoom by selecting regions or pressing up/down buttons. You can also pick
 which displays the coordinates, length, and iid of the alignment and gives you the option of requesting
 to see the actual alignment in a secondary window.  And more ...
 
-ALNview is currently only available as a prebuilt, binary .dmg for Apple computers.  We also give
-you all the source files so the ambitious (or desperate :-) ) user can build it for other operating
-systems using Qt 6.9.0 or higher.  Indeed if you make a binary image for a Windows or Unix machine
-I would be very happy if you made a pull request with the relevant file and I will place it here.
+The prebuilt `.dmg` is for Apple computers. Linux users can build the source
+with Qt 6.9.0 or higher, a C/C++ compiler, CMake, and zlib development headers.
+
+## Build and run on Linux
+
+On Ubuntu or Debian with Qt 6.9 or newer in their repositories:
+
+```sh
+sudo apt-get install build-essential cmake qt6-base-dev zlib1g-dev
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j 4
+./build/ALNview
+```
+
+The application opens a dialog for selecting a FASTGA `.1aln` alignment file.
+Keep the associated source genome files available to enable sequence alignment
+and k-mer dot plots.
+
+Alternatively, build with Qt's qmake in a separate directory:
+
+```sh
+mkdir -p build/qmake
+cd build/qmake
+qmake6 ../../viewer.pro
+make -j 4
+./ALNview
+```
+
+To install the CMake build to a chosen prefix, run
+`cmake --install build --prefix /your/install/prefix`.
