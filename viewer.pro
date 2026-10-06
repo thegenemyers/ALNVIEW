@@ -1,8 +1,8 @@
-QMAKE_SPEC = macx-clang
 CONFIG += release
 QMAKE_CXXFLAGS += -fvisibility=hidden -Wall -Wno-unused-result
 QMAKE_CFLAGS += -Wall -Wno-unused-result
-QMAKE_LIBS += -lz
+LIBS += -lz
+unix:!macx: LIBS += -lpthread -lm
 
 MOC_DIR = BUILD
 OBJECTS_DIR = BUILD
